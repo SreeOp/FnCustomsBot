@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
 // Define the role IDs allowed to use the command
-const AllowedRoleIDs = ['1007930481716760666', '1046786167644880946']; // Replace with actual role IDs
+const AllowedRoleIDs = ['1220620597957234769', '1167836416546447412']; // Replace with actual role IDs
 
 module.exports = {
   data: new SlashCommandBuilder()
