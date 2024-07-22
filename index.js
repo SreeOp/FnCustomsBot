@@ -4,36 +4,29 @@ const path = require('path');
 const express = require('express');
 require('dotenv').config();
 
-// Import the setStatus function
 const setStatus = require('./functions/setStatus');
-// Import the staff application function
 const staffApplication = require('./functions/staffApplication');
 
-// Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
-// Initialize commands collection
 client.commands = new Collection();
 
-// Command files
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Set commands to the collection
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
   const command = require(filePath);
   client.commands.set(command.data.name, command);
 }
 
-// Ready event
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  // Set the bot's status
   setStatus(client);
 
-  // Send the application message
-  const applyChannelId = process.env.APPLY_CHANNEL_ID;
+  // Load the application channel from the config file
+  const config = require('./config.json');
+  const applyChannelId = config.applicationChannelId;
   const applyChannel = client.channels.cache.get(applyChannelId);
 
   if (applyChannel) {
@@ -51,7 +44,6 @@ client.once('ready', async () => {
   }
 });
 
-// Interaction create event
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand() && !interaction.isButton() && !interaction.isModalSubmit()) return;
 
@@ -90,10 +82,8 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// Login to Discord with your app's token from environment variables
 client.login(process.env.DISCORD_TOKEN);
 
-// Set up an Express server
 const app = express();
 const PORT = process.env.PORT || 3000;
 
