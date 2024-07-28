@@ -1,16 +1,14 @@
-const { Client, GatewayIntentBits, Collection, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-require('dotenv').config();
+require('dotenv').config(); // Load environment variables
 
 // Import the setStatus function
 const setStatus = require('./functions/setStatus');
-// Import the staff application function
-const staffApplication = require('./functions/staffApplication');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Initialize commands collection
 client.commands = new Collection();
@@ -26,66 +24,42 @@ for (const file of commandFiles) {
   client.commands.set(command.data.name, command);
 }
 
+// Deploy commands
+const deployCommands = require('./deploy-commands');
+deployCommands().catch(console.error);
+
 // Ready event
-client.once('ready', async () => {
+client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   // Set the bot's status
   setStatus(client);
-
-  // Send the application message
-  const applyChannelId = process.env.APPLY_CHANNEL_ID;
-  const applyChannel = client.channels.cache.get(applyChannelId);
-
-  if (applyChannel) {
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('apply')
-        .setLabel('Apply for Staff')
-        .setStyle(ButtonStyle.Primary)
-    );
-
-    await applyChannel.send({
-      content: 'Click the button below to apply for a staff position.',
-      components: [row],
-    });
-  }
 });
 
 // Interaction create event
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand() && !interaction.isButton() && !interaction.isModalSubmit()) return;
+  if (!interaction.isCommand()) return;
 
-  if (interaction.isCommand()) {
-    const command = client.commands.get(interaction.commandName);
+  const command = client.commands.get(interaction.commandName);
 
-    if (!command) return;
+  if (!command) return;
 
-    const memberRoles = interaction.member.roles.cache;
-    const allowedRoles = process.env.ALLOWED_ROLES.split(',');
-    const hasPermission = allowedRoles.some(role => memberRoles.has(role));
+  // Check if ALLOWED_ROLES is defined
+  const allowedRoles = process.env.ALLOWED_ROLES ? process.env.ALLOWED_ROLES.split(',') : [];
+  const memberRoles = interaction.member.roles.cache;
+  const hasPermission = allowedRoles.some(role => memberRoles.has(role));
 
-    if (!hasPermission) {
-      return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
-    }
+  if (!hasPermission) {
+    return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+  }
 
-    try {
-      await command.execute(interaction);
-    } catch (error) {
-      console.error(error);
-      if (!interaction.replied) {
-        await interaction.reply({ content: 'There was an error executing that command!', ephemeral: true });
-      } else {
-        await interaction.followUp({ content: 'There was an error executing that command!', ephemeral: true });
-      }
-    }
-  } else if (interaction.isButton() || interaction.isModalSubmit()) {
-    try {
-      await staffApplication(client, interaction);
-    } catch (error) {
-      console.error('Error handling interaction:', error);
-      if (!interaction.replied) {
-        await interaction.reply({ content: 'There was an error processing your request.', ephemeral: true });
-      }
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    if (!interaction.replied) {
+      await interaction.reply({ content: 'There was an error executing that command!', ephemeral: true });
+    } else {
+      await interaction.followUp({ content: 'There was an error executing that command!', ephemeral: true });
     }
   }
 });
