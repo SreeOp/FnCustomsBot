@@ -5,7 +5,7 @@ const statusMessages = [
   { name: "Florencia Customs", type: ActivityType.Playing },
   { name: "Custom Works", type: ActivityType.Watching },
   { name: "Tickets", type: ActivityType.Listening },
-  { name: "Fn Customs", type: ActivityType.Streaming }
+  { name: "#UnleashTheBeast", type: ActivityType.Playing }
 ];
 
 let currentIndex = 0;
